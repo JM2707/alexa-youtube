@@ -394,22 +394,24 @@ def update_list_item(event, listId, itemId, itemValue, itemVersion, itemStatus='
         logger.info(r.json())
 
 
-def create_list_item(event, listId, title):
+def create_list_item(event, listId, title, include_time):
     headers = get_headers(event)
     if headers:
-        timestamp = event['request']['timestamp']
-        utc = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
-        from_zone = tz.tzutc()
-        timezone = get_time_zone(event)
-        if type(timezone) == list:
-            timezone = 'Europe/London'
-            if event['request']['locale'] in locales:
-                timezone = locales[event['request']['locale']]
-        to_zone = tz.gettz(timezone)
-        utc = utc.replace(tzinfo=from_zone)
-        local = utc.astimezone(to_zone)
-        the_date = local.strftime('%b %d %Y %H:%M:%S')
-        text = the_date+' '+title
+        text = title
+        if include_time:
+            timestamp = event['request']['timestamp']
+            utc = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+            from_zone = tz.tzutc()
+            timezone = get_time_zone(event)
+            if type(timezone) == list:
+                timezone = 'Europe/London'
+                if event['request']['locale'] in locales:
+                    timezone = locales[event['request']['locale']]
+            to_zone = tz.gettz(timezone)
+            utc = utc.replace(tzinfo=from_zone)
+            local = utc.astimezone(to_zone)
+            the_date = local.strftime('%b %d %Y %H:%M:%S')
+            text = the_date+' '+title
         post_list_item(event, listId, headers, text)
 
 
@@ -448,13 +450,14 @@ def delete_list_item(event, listId, itemId):
         r = requests.delete(url, headers=headers)
 
 
-def add_to_list(event, title):
-    listId = get_list_id(event, 'YouTube')
+def add_to_list(event, title, list_title='YouTube', do_trim_list=True, include_time=True):
+    listId = get_list_id(event, list_title)
     logger.info(listId)
     if listId is not None:
-        create_list_item(event, listId, title)
+        create_list_item(event, listId, title, include_time)
         logger.info('Created item')
-        trim_list(event, listId)
+        if do_trim_list:
+            trim_list(event, listId)
 
 
 def check_favorite_videos(event, query, do_shuffle='0'):
@@ -1180,6 +1183,12 @@ def add_to_favorites(event):
         current_token = event['context']['AudioPlayer']['token']
         playlist = convert_token_to_dict(current_token)
         logger.info(playlist)
+        id = playlist['v'+playlist['p']]
+        url = 'https://youtu.be/'+id
+        title = get_title(id, type_='videos')
+        title = title + ' | ' + url
+        logger.info(title)
+        add_to_list(event, title, 'YouTube Favorites', False, False)
     else:
         speech_output = strings['nothingplaying']
     return build_response(build_short_speechlet_response(speech_output, should_end_session))
