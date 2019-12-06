@@ -296,6 +296,8 @@ def on_intent(event):
         return stop()
     elif intent_name == "PlayMoreLikeThisIntent":
         return play_more_like_this(event)
+    elif intent_name == "AddToFavoritesIntent":
+        return add_to_favorites(event)
     else:
         raise ValueError("Invalid intent")
 
@@ -1160,6 +1162,18 @@ def say_timestamp(event):
             speech_output += ' ' + str(seconds) + ' ' + strings['second'] + ', '
         else:
             speech_output += ' ' + str(seconds) + ' ' + strings['seconds'] + ', '
+    else:
+        speech_output = strings['nothingplaying']
+    return build_response(build_short_speechlet_response(speech_output, should_end_session))
+
+
+def add_to_favorites(event):
+    should_end_session = True
+    speech_output = strings['ok']
+    if 'token' in event['context']['AudioPlayer']:
+        current_token = event['context']['AudioPlayer']['token']
+        playlist = convert_token_to_dict(current_token)
+        logger.info(playlist)
     else:
         speech_output = strings['nothingplaying']
     return build_response(build_short_speechlet_response(speech_output, should_end_session))

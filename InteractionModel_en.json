@@ -215,6 +215,18 @@
                     ]
                 },
                 {
+                    "name": "AddToFavoritesIntent",
+                    "slots": [],
+                    "samples": [
+                        "Add to favorites",
+                        "Make this a favorite",
+                        "Add this video to favorites",
+                        "Add this song to favorites",
+                        "Add this playlist to favorites",
+                        "Add this channel to favorites"
+                    ]
+                },
+                {
                     "name": "SkipToIntent",
                     "slots": [
                         {
