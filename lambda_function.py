@@ -1179,7 +1179,8 @@ def say_timestamp(event):
 def add_to_favorites(event):
     should_end_session = True
     speech_output = strings['ok']
-    if 'token' in event['context']['AudioPlayer']:
+    if ('token' in event['context']['AudioPlayer']
+            and event['context']['AudioPlayer']['playerActivity'] == 'PLAYING'):
         current_token = event['context']['AudioPlayer']['token']
         playlist = convert_token_to_dict(current_token)
         logger.info(playlist)
