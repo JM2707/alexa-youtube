@@ -631,9 +631,9 @@ def playlist_search(query, sr, do_shuffle='0'):
     errorMessage = ''
     search_response = youtube_search(query, 'playlist', 10)
     if sr > len(search_response.get('items')):
-        return False, '', sr, strings['nomoreplaylists']
+        return False, '', sr, strings['nomoreplaylists'], playlist_id
     if len(search_response.get('items')) == 0:
-        return False, '', sr, strings['noplaylistresults']
+        return False, '', sr, strings['noplaylistresults'], playlist_id
     for playlist in range(sr, len(search_response.get('items'))):
         if 'playlistId' in search_response.get('items')[playlist]['id']:
             playlist_id = search_response.get('items')[playlist]['id']['playlistId']
@@ -644,7 +644,7 @@ def playlist_search(query, sr, do_shuffle='0'):
     videos = get_videos_from_playlist(playlist_id)
     if do_shuffle == '1':
         shuffle(videos)
-    return videos[0:50], playlist_title, sr, errorMessage
+    return videos[0:50], playlist_title, sr, errorMessage, playlist_id
 
 
 def get_videos_from_playlist(playlist_id):
@@ -663,7 +663,7 @@ def get_videos_from_playlist(playlist_id):
 
 def my_playlists_search(query, sr, do_shuffle='0'):
     channel_id = None
-    playlist_id = None
+    playlist_id = ''
     if 'MY_CHANNEL_ID' in environ:
         channel_id = environ['MY_CHANNEL_ID']
     search_response = youtube_search(query, 'playlist', 10, channel_id=channel_id)
@@ -678,8 +678,8 @@ def my_playlists_search(query, sr, do_shuffle='0'):
         if 'playlistId' in search_response.get('items')[playlist]['id']:
             playlist_id = search_response.get('items')[playlist]['id']['playlistId']
             break
-    if playlist_id is None:
-        return [], None, 0
+    if playlist_id == '':
+        return [], None, 0, playlist_id
     sr = playlist
     logger.info('Playlist info: https://www.youtube.com/playlist?list='+playlist_id)
     playlist_title = search_response.get('items')[sr]['snippet']['title']
@@ -695,7 +695,7 @@ def my_playlists_search(query, sr, do_shuffle='0'):
                 pass
     if do_shuffle == '1':
         shuffle(videos)
-    return videos[0:50], playlist_title, sr
+    return videos[0:50], playlist_title, sr, playlist_id
 
 
 def my_latest_video():
@@ -906,10 +906,10 @@ def search(event):
     videos, playlist_channel_video, playlist_title = check_favorite_videos(event, query, playlist['s'])
     if videos == []:
         if intent_name == "PlaylistIntent" or intent_name == "ShufflePlaylistIntent" or intent_name == "NextPlaylistIntent":
-            videos, playlist_title, playlist['sr'], errorMessage = playlist_search(query, sr, playlist['s'])
+            videos, playlist_title, playlist['sr'], errorMessage, playlist['pl'] = playlist_search(query, sr, playlist['s'])
             playlist_channel_video = strings['playlist']
         elif intent_name == "SearchMyPlaylistsIntent" or intent_name == "ShuffleMyPlaylistsIntent":
-            videos, playlist_title, playlist['sr'] = my_playlists_search(query, sr, playlist['s'])
+            videos, playlist_title, playlist['sr'], playlist['pl'] = my_playlists_search(query, sr, playlist['s'])
             playlist_channel_video = strings['playlist']
         elif intent_name == "ChannelIntent" or intent_name == "ShuffleChannelIntent":
             videos, playlist_title = channel_search(query, sr, playlist['s'])
@@ -960,7 +960,7 @@ def nearly_finished(event):
         playlist = convert_token_to_dict(next_token)
         if playlist['i'] != 'ShuffleMyPlaylists':
             return do_nothing()
-        videos, playlist_title, playlist['sr'] = my_playlists_search(playlist['query'], int(playlist['sr']), playlist['s'])
+        videos, playlist_title, playlist['sr'], playlist['pl'] = my_playlists_search(playlist['query'], int(playlist['sr']), playlist['s'])
         for i, id in enumerate(videos):
             playlist['v'+str(i)] = id
             if next_url is None:
@@ -1010,7 +1010,7 @@ def skip_action(event, skip):
         if playlist['i'] != 'ShuffleMyPlaylists':
             speech_output = strings['nomoreitems']
             return build_response(build_short_speechlet_response(speech_output, should_end_session))
-        videos, playlist_title, playlist['sr'] = my_playlists_search(playlist['query'], int(playlist['sr']), playlist['s'])
+        videos, playlist_title, playlist['sr'], playlist['pl'] = my_playlists_search(playlist['query'], int(playlist['sr']), playlist['s'])
         for i, id in enumerate(videos):
             playlist['v'+str(i)] = id
             if next_url is None:
