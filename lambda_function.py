@@ -728,7 +728,7 @@ def channel_search(query, sr, do_shuffle='0'):
                 pass
     if do_shuffle == '1':
         shuffle(videos)
-    return videos[0:50], playlist_title
+    return videos[0:50], playlist_title, channel_id
 
 
 def get_url_and_title(id):
@@ -912,7 +912,7 @@ def search(event):
             videos, playlist_title, playlist['sr'], playlist['pl'] = my_playlists_search(query, sr, playlist['s'])
             playlist_channel_video = strings['playlist']
         elif intent_name == "ChannelIntent" or intent_name == "ShuffleChannelIntent":
-            videos, playlist_title = channel_search(query, sr, playlist['s'])
+            videos, playlist_title, playlist['ch'] = channel_search(query, sr, playlist['s'])
             playlist_channel_video = strings['channel']
         elif intent_name == "PlayMyLatestVideoIntent":
             videos = my_latest_video()
@@ -1187,11 +1187,15 @@ def add_to_favorites(event):
         if 'pl' in playlist:
             id = playlist['pl']
             url = 'https://www.youtube.com/playlist?list='+id
-            title = get_title(id, type_='playlists')
+            title = get_title(id, 'playlists')
+        elif 'ch' in playlist:
+            id = playlist['ch']
+            url = 'https://www.youtube.com/channel/'+id
+            title = get_title(id, 'channels')
         else:
             id = playlist['v'+playlist['p']]
             url = 'https://youtu.be/'+id
-            title = get_title(id, type_='videos')
+            title = get_title(id, 'videos')
         title = title + ' | ' + url
         logger.info(title)
         add_to_list(event, title, 'YouTube Favorites', False, False)
