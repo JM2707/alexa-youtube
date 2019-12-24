@@ -1184,9 +1184,14 @@ def add_to_favorites(event):
         current_token = event['context']['AudioPlayer']['token']
         playlist = convert_token_to_dict(current_token)
         logger.info(playlist)
-        id = playlist['v'+playlist['p']]
-        url = 'https://youtu.be/'+id
-        title = get_title(id, type_='videos')
+        if 'pl' in playlist:
+            id = playlist['pl']
+            url = 'https://www.youtube.com/playlist?list='+id
+            title = get_title(id, type_='playlists')
+        else:
+            id = playlist['v'+playlist['p']]
+            url = 'https://youtu.be/'+id
+            title = get_title(id, type_='videos')
         title = title + ' | ' + url
         logger.info(title)
         add_to_list(event, title, 'YouTube Favorites', False, False)
